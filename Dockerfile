@@ -15,14 +15,18 @@ CMD ["echo \"===== Startup Tasks =====\" && \
         echo \"Executing: apt-get install -y ${clean_list}\" && \
         apt-get install -y ${clean_list} ; \
     fi && \
-    tail -f /dev/null"]
+    /usr/sbin/sshd -D"]
 
-RUN export DEBIAN_FRONTEND=noninteractive; \
-    apt-get update && apt-get install -y gnupg2 wget locales locales-all ; \
-    wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -  && \
-    echo "deb https://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list && \
-    apt-get update && apt-get install -y openssh-server htop nano cron mc psmisc curl git python3-pip google-chrome-stable && \
-    service ssh start && \
-    rm -f /etc/apt/sources.list.d/google.list && \
-    pip3 install virtualenv && \
-    apt-get install -f -y
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && mkdir -p /var/run/sshd \
+    && sed -i "s/UsePrivilegeSeparation.*/UsePrivilegeSeparation no/g" /etc/ssh/sshd_config \
+    && sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config \
+    && touch /root/.Xauthority \
+    && apt-get update && apt-get install -y gnupg2 wget locales locales-all \
+    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -  \
+    && echo "deb https://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list \
+    && apt-get update && apt-get install -y openssh-server htop nano cron mc psmisc curl git python3-pip google-chrome-stable \
+    && service ssh start \
+    && rm -f /etc/apt/sources.list.d/google.list \
+    && pip3 install virtualenv \
+    && apt-get install -f -y
